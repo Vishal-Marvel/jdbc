@@ -15,9 +15,9 @@ public class UserServiceImpl implements UserService {
     private final UserRoleDao userRoleDao = new UserRoleDaoImpl();
 
     @Override
-    public void addUser(User user){
+    public int addUser(User user){
 
-        userDao.addUser(user);
+        return userDao.addUser(user);
     }
 
     @Override

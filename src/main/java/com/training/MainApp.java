@@ -13,24 +13,23 @@ import java.util.Scanner;
 public class MainApp {
 
     public static void print(UserService userService) throws UnauthorizedException {
-        System.out.println("User Id, Name, Roles");
-        userService.getAllUsers().forEach(u ->
-                {
-                    System.out.print(u.getUser().getId() + " " + u.getUser().getFirstName() + " " + u.getUser().getLastName() + " ");
-                    u.getCurrentRoles().forEach(r-> System.out.print(r+", "));
-                    System.out.println();
+        System.out.println("User Id | Name           | Roles");
+        System.out.println("-----------------------------------");
 
-                }
-        );
+        userService.getAllUsers().forEach(u -> {
+            String fullName = u.getUser().getFirstName() + " " + u.getUser().getLastName();
+            String roles = String.join(", ", u.getCurrentRoles());
+
+            System.out.printf("%-7d | %-14s | %s%n",
+                    u.getUser().getId(),
+                    fullName,
+                    roles);
+        });
+
 
     }
 
-    public static void main(String[] args) {
-        Scanner sc = new Scanner(System.in);
-        UserService userService = new UserServiceImpl();
-        LoginService loginService = new LoginServiceImpl();
-        UserRoleService userRoleService = new UserRoleServiceImpl();
-
+    public static UserRoleDto login(Scanner sc, LoginService loginService){
         System.out.println("=== Welcome to JDBC Login ===");
         System.out.print("Enter username: ");
         String username = sc.nextLine();
@@ -43,16 +42,26 @@ public class MainApp {
             System.out.println("Login successful! Roles: " + user.getCurrentRoles());
         } catch (AuthenticationException | UserNotFoundException e) {
             System.err.println(e.getMessage());
-            return;
+            return null;
         }
+        return user;
+    }
 
-        while (true) {
+    public static void main(String[] args) {
+        Scanner sc = new Scanner(System.in);
+        UserService userService = new UserServiceImpl();
+        LoginService loginService = new LoginServiceImpl();
+        UserRoleService userRoleService = new UserRoleServiceImpl();
+
+        UserRoleDto user = login(sc, loginService);
+
+        while (user!=null) {
             System.out.println("\n1. Add User");
             System.out.println("2. Update User");
             System.out.println("3. Get All Users");
             System.out.println("4. Delete User");
-            System.out.println("5. Create Login for User");
-            System.out.println("6. Assign Role");
+            System.out.println("5. Assign Role");
+            System.out.println("6. Logout");
             System.out.println("7. Exit");
             System.out.print("Select a choice: ");
 
@@ -68,12 +77,19 @@ public class MainApp {
                         String fn = sc.nextLine();
                         System.out.print("Enter last name:");
                         String ln = sc.nextLine();
-                        userService.addUser(new User(0, fn, ln));
+                        int uid = userService.addUser(new User(0, fn, ln));
+                        System.out.print("Enter username:");
+                        String username = sc.nextLine();
+                        System.out.print("Enter password:");
+                        String password = sc.nextLine();
+                        loginService.createLogin(new Login(0, username, password, uid));
+                        String role = "USER";
+                        userRoleService.assignRole(uid, role);
                         System.out.println("User Added!");
                         break;
 
                     case 2:
-                        int uid = user.getUser().getId();
+                        uid = user.getUser().getId();
                         if (user.getCurrentRoles().contains("ADMIN")) {
                             print(userService);
                             System.out.println("Enter user id to update:");
@@ -105,25 +121,9 @@ public class MainApp {
                         userService.deleteUser(uid);
                         System.out.println("User Deleted!");
                         break;
+
+
                     case 5:
-                        if (!user.getCurrentRoles().contains("ADMIN"))
-                            throw new UnauthorizedException("Only ADMIN can create login.");
-                        print(userService);
-
-                        System.out.print("Enter user id to add Login:");
-                        uid = sc.nextInt();
-                        sc.nextLine();
-                        System.out.print("Enter username:");
-                        username = sc.nextLine();
-                        System.out.print("Enter password:");
-                        password = sc.nextLine();
-                        loginService.createLogin(new Login(0, username, password, uid));
-                        System.out.print("Enter Role for the user [ADMIN/USER]:");
-                        String role = sc.nextLine();
-                        userRoleService.assignRole(uid, role);
-                        break;
-
-                    case 6:
                         if (!user.getCurrentRoles().contains("ADMIN"))
                             throw new UnauthorizedException("Only ADMIN can assign role.");
                         print(userService);
@@ -134,6 +134,10 @@ public class MainApp {
                         System.out.print("Enter Role for the user [ADMIN/USER]:");
                         role = sc.nextLine();
                         userRoleService.assignRole(uid, role);
+                        break;
+                    case 6:
+                        user = null;
+                        user = login(sc, loginService);
                         break;
                     case 7:
                         System.out.println("Goodbye!");

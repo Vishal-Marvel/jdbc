@@ -1,6 +1,5 @@
 package com.training.dao;
 
-import com.training.dto.UserRoleDto;
 import com.training.entity.User;
 import com.training.util.DbUtil;
 import com.training.util.QueryMapper;
@@ -12,15 +11,23 @@ import java.util.*;
 public class UserDaoImpl implements UserDao {
 
     @Override
-    public void addUser(User user) {
+    public int addUser(User user) {
         try (Connection conn = DbUtil.getConnection();
              PreparedStatement ps = conn.prepareStatement(QueryMapper.CREATE_USER, Statement.RETURN_GENERATED_KEYS)) {
             ps.setString(1, user.getFirstName());
             ps.setString(2, user.getLastName());
-            ps.executeUpdate();
+            int rows = ps.executeUpdate();
+            if (rows > 0) {
+                try (ResultSet rs = ps.getGeneratedKeys()) {
+                    if (rs.next()) {
+                        return rs.getInt(1); // return the newly generated loginId
+                    }
+                }
+            }
         } catch (SQLException e) {
             throw new DatabaseException("Failed to insert user", e);
         }
+        return 0;
     }
 
     @Override
