@@ -31,4 +31,12 @@ public class UserRoleDto {
     public void setCurrentRoles(List<String> currentRoles) {
         this.currentRoles = currentRoles;
     }
+
+    @Override
+    public String toString() {
+        return "UserRoleDto{" +
+                "user=" + user +
+                ", currentRoles=" + currentRoles +
+                '}';
+    }
 }

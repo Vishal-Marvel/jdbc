@@ -26,7 +26,7 @@ public class LoginServiceImpl implements LoginService {
         }
 
         userRoleDto.setUser(userDao.getUserById(login.getUserId()).orElseThrow(() -> new UserNotFoundException("User Not Found")));
-        userRoleDto.setCurrentRoles(userRoleDao.getRolesByUserId(login.getId()));
+        userRoleDto.setCurrentRoles(userRoleDao.getRolesByUserId(login.getUserId()));
 
 
         return userRoleDto;
